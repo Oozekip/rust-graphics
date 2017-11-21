@@ -59,37 +59,47 @@ impl Mesh {
         color_view: RenderTargetView<R, ColorFormat>,
         depth_view: DepthStencilView<R, DepthFormat>,
     ) -> Result<MeshData<R>, &'static str> {
-        let mut vert_list = Vec::new();
+        if self.normal_list.len() != self.vertex_list.len() {
+            Err("Vertex and normal list do not match in length")
+        } else {
+            let mut vert_list = Vec::new();
 
-        for i in 0..self.vertex_list.len() {
-            let vert = self.vertex_list[i];
-            let norm = self.normal_list[i];
-            vert_list.push(Vertex {
-                pos: vert.into(),
-                normal: norm.into(),
-                color: Color::white().into(),
-            });
+            for i in 0..self.vertex_list.len() {
+                let vert = self.vertex_list[i];
+                let norm = self.normal_list[i];
+                vert_list.push(Vertex {
+                    pos: vert.into(),
+                    normal: norm.into(),
+                    color: Color::white().into(),
+                });
+            }
+
+            let (vbo, slice) = factory
+                .create_vertex_buffer_with_slice(vert_list.as_slice(), self.tri_list.as_slice());
+
+            // Transform buffer
+            let constant_buffer = factory.create_constant_buffer(1);
+
+            // Material buffer
+            let material_buffer = factory.create_constant_buffer(1);
+
+            // Light buffers
+            let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
+            let light_meta = factory.create_constant_buffer(1);
+
+            Result::Ok(MeshData {
+                slice: slice,
+                data: pipe::Data {
+                    vbuf: vbo,
+                    transform: constant_buffer,
+                    out: color_view,
+                    out_depth: depth_view,
+                    light_meta: light_meta,
+                    lights: light_buffer,
+                    material: material_buffer,
+                },
+            })
         }
-
-        let (vbo, slice) =
-            factory.create_vertex_buffer_with_slice(vert_list.as_slice(), self.tri_list.as_slice());
-
-        let constant_buffer = factory.create_constant_buffer(1);
-        let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
-
-        let light_meta = factory.create_constant_buffer(1);
-
-        Result::Ok(MeshData {
-            slice: slice,
-            data: pipe::Data {
-                vbuf: vbo,
-                transform: constant_buffer,
-                out: color_view,
-                out_depth: depth_view,
-                light_meta: light_meta,
-                lights: light_buffer,
-            },
-        })
     }
 
     pub fn add_vertex(&mut self, vert: &Vector3<f32>) -> &mut Self {

@@ -8,19 +8,51 @@ in vec4 worldPos;
 
 struct Light
 {
-    vec3 direction;
-    vec4 diffuseColor;
+    vec4 diffuse;
+    vec4 ambient;
+    vec4 specular;
+    vec4 position;
+    vec4 direction;
+    int type;   // 0 directional, 1 point, 2 spot
 };
 
-uniform Light lights[MAX_LIGHTS];
+// layout(std140)
+uniform materialData{
+    vec4 m_diffuse;
+    vec4 m_ambient;
+    vec4 m_specular;
+    float m_specularPower;
+};
 
-layout (std140)
 uniform lightMeta
 {
     int lightCount;
 };
 
+layout (std140)
+uniform lightData
+{
+    Light lights[MAX_LIGHTS];
+};
+
 out vec4 Target0;
+
+vec4 computeDiffuse(in vec4 N, in vec4 L, in vec4 iD, in vec4 kD)
+{
+    return iD * kD * clamp(dot(L, N), 0, 1);
+}
+
+vec4 computeAmbient(in vec4 iA, in vec4 kA)
+{
+    return iA * kA;
+}
+
+vec4 computeSpecular(in vec4 N, in vec4 L, in vec4 V, in vec4 iS, in vec4 kS, float power)
+{
+    vec4 R = normalize(reflect(L, normalize(N)));
+
+    return iS * kS * pow(clamp(dot(R, V), 0, 1), power);
+}
 
 vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
     vec4 litColor = vec4(0);
@@ -28,9 +60,39 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
     for(int i  = 0; i < lightCount; i++){
         Light light = lights[i];
 
-        vec4 currColor = light.diffuseColor * worldFragColor * clamp(dot(vec4(-light.direction, 0), worldNorm), 0, 1);
+        vec4 L;
 
-        litColor += currColor;
+        switch(light.type)
+        {
+            case 1:
+                L = normalize(light.position - worldPos);
+                break;
+            default:
+                L = normalize(-light.direction);
+                break;
+        }
+
+
+        vec4 ambient = computeAmbient(light.ambient, m_ambient); 
+        vec4 diff = computeDiffuse(worldNorm, L, light.diffuse, m_diffuse);
+        vec4 spec = computeSpecular(worldNorm, L, vec4(0, 0, -1, 0), light.specular, m_specular, m_specularPower);
+
+        float dv = length(-vec4(worldPos.xyz, 0));
+
+        float attenuation;
+        
+        switch(light.type)
+        {
+            case 0:
+                // No attenuation for directional lights
+                attenuation = 1;
+                break;
+            default:
+                attenuation = min(1 / pow(dv, 2), 1);
+                break;
+        }
+
+        litColor += ambient + attenuation * (diff + spec);
     }
 
     return vec4(litColor.rgb, worldFragColor.a);

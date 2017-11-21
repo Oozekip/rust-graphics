@@ -3,7 +3,7 @@ use gfx;
 
 pub type ColorFormat = gfx::format::Srgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
-pub const MAX_LIGHTS: usize = 8;
+pub const MAX_LIGHTS: usize = 1;
 
 gfx_defines!{
     vertex Vertex{
@@ -12,28 +12,21 @@ gfx_defines!{
         color: [f32;4] = "vColor",
     }
 
-    constant MaterialData{
-        diffuse_color: [f32;4] = "m_diffuse",
-        ambient_color: [f32; 4] = "m_ambient",
-        specular_color: [f32; 4] = "m_specular",
-        specular_power: f32 = "m_specularPower",
-    }
-
-    constant LightData{
-        diffuse_color: [f32;4] = "diffuse",
-        ambient_color: [f32; 4] = "ambient",
-        specular_color: [f32; 4] = "specular",
+    constant Light{
+<<<<<<< HEAD
+        // position: [f32;3] = "position",
+        direction: [f32;3] = "direction",
+=======
+>>>>>>> 97b32707fbd7ee6424e672ecc6e8fba8588dee49
+        diffuse_color: [f32;4] = "diffuseColor",
         position: [f32;4] = "position",
+        // _padding: i32 = "",
         direction: [f32;4] = "direction",
-        light_type: i32 = "type",
-        // each element is expected to be 16-byte aligned
-        _padding: [i32; 3] = "",
+        // _padding2: i32 ="",
     }
 
     constant LightMeta{
         count: i32 = "lightCount",
-        // c: [f32; 3] = "c",
-
     }
 
     constant Transform{
@@ -45,9 +38,12 @@ gfx_defines!{
     pipeline pipe{
         vbuf: gfx::VertexBuffer<Vertex> = (),
         transform: gfx::ConstantBuffer<Transform> = "Transform",
-        material: gfx::ConstantBuffer<MaterialData> = "materialData",
         light_meta: gfx::ConstantBuffer<LightMeta> = "lightMeta",
-        lights: gfx::ConstantBuffer<LightData> = "lightData",
+<<<<<<< HEAD
+        lights: gfx::ConstantBuffer<Light> = "lights",
+=======
+        lights: gfx::ConstantBuffer<Light> = "lightData",
+>>>>>>> 97b32707fbd7ee6424e672ecc6e8fba8588dee49
         out: gfx::BlendTarget<ColorFormat> =
         ("Target0", gfx::state::MASK_ALL, gfx::preset::blend::ALPHA),
         out_depth: gfx::DepthTarget<DepthFormat> =

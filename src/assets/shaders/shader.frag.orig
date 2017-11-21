@@ -1,0 +1,66 @@
+#version 410 core
+
+const int MAX_LIGHTS = 8;
+
+in vec4 worldFragColor;
+in vec4 worldNormal;
+in vec4 worldPos;
+
+struct Light
+{
+<<<<<<< HEAD
+    vec3 direction;
+    vec4 diffuseColor;
+=======
+    vec4 diffuseColor;
+    vec4 position;
+    vec4 direction;
+>>>>>>> 97b32707fbd7ee6424e672ecc6e8fba8588dee49
+};
+
+layout (std140)
+uniform lightData
+{
+    Light lights[MAX_LIGHTS];
+};
+
+<<<<<<< HEAD
+layout (std140)
+=======
+// layout (std140)
+>>>>>>> 97b32707fbd7ee6424e672ecc6e8fba8588dee49
+uniform lightMeta
+{
+    int lightCount;
+};
+
+
+out vec4 Target0;
+
+<<<<<<< HEAD
+vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
+    vec4 litColor = vec4(0);
+
+    for(int i  = 0; i < lightCount; i++){
+        Light light = lights[i];
+
+        vec4 currColor = light.diffuseColor * worldFragColor * clamp(dot(vec4(-light.direction, 0), worldNorm), 0, 1);
+
+        litColor += currColor;
+    }
+
+    return vec4(litColor.rgb, worldFragColor.a);
+}
+
+void main()
+{
+    vec4 diffColor = computeLighting(worldNormal, worldPos);
+    Target0 = vec4(diffColor.rgb, 1);
+=======
+
+void main()
+{
+     vec4 color = lights[0].position + lights[0].direction - lights[0].diffuseColor;
+    Target0 = color;
+>>>>>>> 97b32707fbd7ee6424e672ecc6e8fba8588dee49
+}

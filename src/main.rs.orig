@@ -11,20 +11,16 @@ use gfx_window_glutin as gfx_glutin;
 use glutin::{Event, GlContext, GlRequest, WindowEvent};
 use glutin::Api::OpenGl;
 
-use na::{Matrix4, Point3, Vector3};
+use na::{Matrix4, Point3, Vector3, Vector4};
 
 pub mod color;
-pub mod light;
 pub mod mesh;
 pub mod program;
 pub mod object;
-pub mod material;
 
 use color::Color;
-use light::{Light};
 use mesh::Mesh;
-use program::{pipe, ColorFormat, DepthFormat};
-use material::Material;
+use program::{pipe, ColorFormat, DepthFormat, Light};
 
 use object::Object;
 
@@ -33,7 +29,6 @@ fn main() {
     let mut height = 600;
 
     let mut last_time = time::now();
-    let mut elapsed_time = 0.0;
 
     let mut event_loop = glutin::EventsLoop::new();
     let window_builder = glutin::WindowBuilder::new()
@@ -55,17 +50,9 @@ fn main() {
 
     let mut running = true;
 
-    let mat = Material::Untextured {
-        diffuse_color: Color::gray(),
-        ambient_color: Color::black(),
-        specular_color: Color::white(),
-        specular_power: 5.0,
-    };
-
     let mut model_trans = Object::new(
-        mat,
         Point3::new(0.0, 0.0, -1.0),
-        Vector3::new(0.5, 0.5, 0.5),
+        Vector3::new(1.0, 1.0, 1.0),
         Vector3::new(0.0, 0.0, 0.0),
     );
 
@@ -81,19 +68,6 @@ fn main() {
         0.01,
         100.0,
     );
-
-
-    const LIGHT_COUNT: usize = 1;
-
-    let lights = vec![
-        Light::new_point(
-            Point3::new(0.0, 0.0, 0.0),
-            Color::red(),
-            Color::rgb(128, 0, 0),
-            Color::white(),
-        );
-        LIGHT_COUNT
-    ];
 
     let mut tri_mesh = Mesh::new();
 
@@ -183,23 +157,42 @@ fn main() {
         let diff = curr_time - last_time;
         let nano = diff.num_nanoseconds().unwrap();
         let dt = nano as f32 / 1000000000.0;
-        elapsed_time += dt;
 
         last_time = curr_time;
 
         model_trans.rotation += Vector3::new(45f32.to_radians(), 90f32.to_radians(), 0.0) * dt;
 
         // Clear buffers
-        encoder.clear(&color_view, Color::black().into());
+        encoder.clear(&color_view, Color::gray().into());
         encoder.clear_depth(&depth_view, 1.0);
 
-        // lights[0].light_type = LightType::Point(Point3::new(
-        //     f32::cos(elapsed_time),
-        //     0.0,
-        //     f32::sin(elapsed_time),
-        // ));
+<<<<<<< HEAD
+        let lights = vec![
+            Light {
+                // position: Vector3::new(0.0, 0.0, 0.0).into(),
+                direction: Vector3::new(0.0, 0.0, -1.0).into(),
+                diffuse_color: Color::white().into(),
+            },
+        ];
 
-        light::upload_lights(&mut encoder, &mut tri_data, lights.as_slice());
+        // Upload lights to the mesh
+=======
+        let mut lights = Vec::new();
+
+        const LIGHT_COUNT: u32 = 9;
+
+        for _ in 0..LIGHT_COUNT {
+            lights.push(Light {
+                position: Vector4::new(0.0, 0.0, 0.0, 1.0).into(),
+                direction: Vector4::new(0.0, 0.0, -1.0, 0.0).into(),
+                diffuse_color: Color::white().into(),
+                // _padding: 0i32,
+                // _padding2: 0,
+            });
+        }
+
+>>>>>>> 97b32707fbd7ee6424e672ecc6e8fba8588dee49
+        object::upload_lights(&mut encoder, &mut tri_data, lights.as_slice());
 
         // Draw the mesh
         object::draw(
