@@ -1,6 +1,5 @@
 use std::f32;
 
-use gfx;
 use gfx::{Resources, Slice};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
@@ -9,7 +8,7 @@ use na::Vector3;
 
 use color::Color;
 
-use program::{pipe, ColorFormat, DepthFormat, LightMeta, Vertex, MAX_LIGHTS};
+use program::{pipe, ColorFormat, DepthFormat, Vertex, MAX_LIGHTS};
 
 pub struct MeshData<R: Resources> {
     slice: Slice<R>,
