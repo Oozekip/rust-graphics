@@ -56,7 +56,7 @@ fn main() {
     let mut running = true;
 
     let mat = Material::Untextured {
-        diffuse_color: Color::gray(),
+        diffuse_color: Color::white(),
         ambient_color: Color::black(),
         specular_color: Color::white(),
         specular_power: 5.0,
@@ -86,8 +86,12 @@ fn main() {
     const LIGHT_COUNT: usize = 1;
 
     let lights = vec![
-        Light::new_point(
+        Light::new_spot(
             Point3::new(0.0, 0.0, 0.0),
+            Vector3::new(0.0, 0.0, -1.0),
+            f32::to_radians(15.0),
+            f32::to_radians(30.0),
+            1.0,
             Color::red(),
             Color::rgb(128, 0, 0),
             Color::white(),

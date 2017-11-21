@@ -26,8 +26,9 @@ gfx_defines!{
         position: [f32;4] = "position",
         direction: [f32;4] = "direction",
         light_type: i32 = "type",
-        // each element is expected to be 16-byte aligned
-        _padding: [i32; 3] = "",
+        spotlight_outer: f32 = "spotlightOuter",
+        spotlight_inner: f32 = "spotlightInner",
+        spotlight_falloff: f32 = "spotlightFalloff",
     }
 
     constant LightMeta{

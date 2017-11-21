@@ -14,6 +14,9 @@ struct Light
     vec4 position;
     vec4 direction;
     int type;   // 0 directional, 1 point, 2 spot
+    float spotlightOuter;
+    float spotlightInner;
+    float spotlightFalloff;
 };
 
 // layout(std140)
@@ -29,11 +32,11 @@ uniform lightMeta
     int lightCount;
 };
 
-layout (std140)
 uniform lightData
 {
     Light lights[MAX_LIGHTS];
 };
+
 
 out vec4 Target0;
 
@@ -80,7 +83,8 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
         float dv = length(-vec4(worldPos.xyz, 0));
 
         float attenuation;
-        
+        float spotlight;
+
         switch(light.type)
         {
             case 0:
@@ -92,7 +96,22 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
                 break;
         }
 
-        litColor += ambient + attenuation * (diff + spec);
+        switch(light.type)
+        {
+            case 2: // Spotlight effect
+            {
+                float cosAlpha = max(dot(L, normalize(light.position - worldPos)), 0);
+                float cosPhi = cos(light.spotlightOuter);
+                float cosTheta = cos(light.spotlightInner);
+
+                spotlight = pow((cosAlpha - cosPhi) / (cosTheta - cosPhi), light.spotlightFalloff);
+            }break;
+            
+            default:
+                spotlight = 1;
+                break;
+        }
+        litColor += ambient +  spotlight * attenuation * (diff + spec);
     }
 
     return vec4(litColor.rgb, worldFragColor.a);

@@ -10,7 +10,7 @@ use na::{Point3, Vector3};
 pub enum LightType {
     Directional(Vector3<f32>),
     Point(Point3<f32>),
-    Spot(Point3<f32>, Vector3<f32>),
+    Spot(Point3<f32>, Vector3<f32>, (f32, f32), f32),
 }
 
 #[derive(Clone, Copy)]
@@ -36,11 +36,19 @@ impl Light {
     pub fn new_spot(
         pos: Point3<f32>,
         dir: Vector3<f32>,
+        inner: f32,
+        outer: f32,
+        falloff: f32,
         diffuse: Color,
         spec: Color,
         amb: Color,
     ) -> Self {
-        Self::new(LightType::Spot(pos, dir), diffuse, spec, amb)
+        Self::new(
+            LightType::Spot(pos, dir, (inner, outer), falloff),
+            diffuse,
+            spec,
+            amb,
+        )
     }
 
     pub fn new_directional(dir: Vector3<f32>, diffuse: Color, spec: Color, amb: Color) -> Self {
@@ -62,7 +70,9 @@ impl Into<LightData> for Light {
                 specular_color: self.specular_color.into(),
                 ambient_color: self.ambient_color.into(),
                 light_type: 0,
-                _padding: [0i32; 3],
+                spotlight_outer: 0.0,
+                spotlight_inner: 0.0,
+                spotlight_falloff: 0.0,
             },
             &LightType::Point(pos) => LightData {
                 position: pos.to_homogeneous().into(),
@@ -71,16 +81,20 @@ impl Into<LightData> for Light {
                 specular_color: self.specular_color.into(),
                 ambient_color: self.ambient_color.into(),
                 light_type: 1,
-                _padding: [0i32; 3],
+                spotlight_outer: 0.0,
+                spotlight_inner: 0.0,
+                spotlight_falloff: 0.0,
             },
-            &LightType::Spot(pos, dir) => LightData {
+            &LightType::Spot(pos, dir, (inner, outer), falloff) => LightData {
                 position: pos.to_homogeneous().into(),
                 direction: dir.to_homogeneous().into(),
                 diffuse_color: self.diffuse_color.into(),
                 specular_color: self.specular_color.into(),
                 ambient_color: self.ambient_color.into(),
                 light_type: 2,
-                _padding: [0i32; 3],
+                spotlight_outer: outer,
+                spotlight_inner: inner,
+                spotlight_falloff: falloff,
             },
         }
     }
