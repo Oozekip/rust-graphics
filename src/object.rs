@@ -43,19 +43,23 @@ pub fn upload_lights<R: Resources, C: CommandBuffer<R>>(
     mesh_data: &mut MeshData<R>,
     light_data: &[Light],
 ) {
-    let count = usize::min(MAX_LIGHTS, light_data.len()) as i32;
+    // Number of lights to be sent to the shader
+    let count = usize::min(MAX_LIGHTS, light_data.len());
+
+    // Ensure lights are within bounds
+    let (slice, _) = light_data.split_at(count);;
 
     encoder
         .update_buffer(
             &mesh_data.data_ref_mut().light_meta,
-            &[LightMeta { count: count }],
+            &[LightMeta { count: count as i32}],
             0,
         )
         .unwrap();
 
-    // encoder
-    //     .update_buffer(&mesh_data.data_ref_mut().lights, &light_data, 0)
-    //     .unwrap()
+    encoder
+        .update_buffer(&mesh_data.data_ref_mut().lights, &slice, 0)
+        .unwrap()
 }
 
 pub fn draw<R: Resources, C: CommandBuffer<R>>(

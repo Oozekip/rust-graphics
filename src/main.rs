@@ -10,7 +10,7 @@ use gfx_window_glutin as gfx_glutin;
 use glutin::{Event, GlContext, GlRequest, WindowEvent};
 use glutin::Api::OpenGl;
 
-use na::{Matrix4, Point3, Vector3};
+use na::{Matrix4, Point3, Vector3, Vector4};
 
 pub mod color;
 pub mod mesh;
@@ -128,13 +128,21 @@ fn main() {
         encoder.clear(&color_view, Color::gray().into());
         encoder.clear_depth(&depth_view, 1.0);
 
-        let lights: Vec<Light> = Vec::new();
+        let mut lights = Vec::new();
 
-        // object::upload_lights(
-        //     &mut encoder,
-        //     &mut tri_data,
-        //     lights.as_slice(),
-        // );
+        const LIGHT_COUNT: u32 = 9;
+
+        for _ in 0..LIGHT_COUNT {
+            lights.push(Light {
+                position: Vector4::new(0.0, 0.0, 0.0, 1.0).into(),
+                direction: Vector4::new(0.0, 0.0, -1.0, 0.0).into(),
+                diffuse_color: Color::white().into(),
+                // _padding: 0i32,
+                // _padding2: 0,
+            });
+        }
+
+        object::upload_lights(&mut encoder, &mut tri_data, lights.as_slice());
 
         object::draw(
             &mut encoder,

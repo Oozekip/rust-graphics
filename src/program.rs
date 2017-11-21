@@ -3,7 +3,7 @@ use gfx;
 
 pub type ColorFormat = gfx::format::Srgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
-pub const MAX_LIGHTS: usize = 8;
+pub const MAX_LIGHTS: usize = 1;
 
 gfx_defines!{
     vertex Vertex{
@@ -12,9 +12,11 @@ gfx_defines!{
     }
 
     constant Light{
-        pos: [f32;3] = "position",
-        direction: [f32;3] = "direction",
         diffuse_color: [f32;4] = "diffuseColor",
+        position: [f32;4] = "position",
+        // _padding: i32 = "",
+        direction: [f32;4] = "direction",
+        // _padding2: i32 ="",
     }
 
     constant LightMeta{
@@ -31,7 +33,7 @@ gfx_defines!{
         vbuf: gfx::VertexBuffer<Vertex> = (),
         transform: gfx::ConstantBuffer<Transform> = "Transform",
         light_meta: gfx::ConstantBuffer<LightMeta> = "lightMeta",
-        //lights: gfx::ConstantBuffer<Light> = "lights",
+        lights: gfx::ConstantBuffer<Light> = "lightData",
         out: gfx::BlendTarget<ColorFormat> =
         ("Target0", gfx::state::MASK_ALL, gfx::preset::blend::ALPHA),
         out_depth: gfx::DepthTarget<DepthFormat> =

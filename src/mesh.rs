@@ -62,8 +62,7 @@ impl Mesh {
             factory.create_vertex_buffer_with_slice(vert_list.as_slice(), self.tri_list.as_slice());
 
         let constant_buffer = factory.create_constant_buffer(1);
-        //let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
-        let locals = LightMeta { count: 0 };
+        let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
 
         let light_meta = factory.create_constant_buffer(1);
 
@@ -75,7 +74,7 @@ impl Mesh {
                 out: color_view,
                 out_depth: depth_view,
                 light_meta: light_meta,
-                //lights: light_buffer,
+                lights: light_buffer,
             },
         })
     }
