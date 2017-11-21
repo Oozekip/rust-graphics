@@ -8,11 +8,12 @@ pub const MAX_LIGHTS: usize = 8;
 gfx_defines!{
     vertex Vertex{
         pos: [f32;3] = "vPos",
+        normal: [f32;3] = "vNormal",
         color: [f32;4] = "vColor",
     }
 
     constant Light{
-        pos: [f32;3] = "position",
+        // position: [f32;3] = "position",
         direction: [f32;3] = "direction",
         diffuse_color: [f32;4] = "diffuseColor",
     }
@@ -31,7 +32,7 @@ gfx_defines!{
         vbuf: gfx::VertexBuffer<Vertex> = (),
         transform: gfx::ConstantBuffer<Transform> = "Transform",
         light_meta: gfx::ConstantBuffer<LightMeta> = "lightMeta",
-        //lights: gfx::ConstantBuffer<Light> = "lights",
+        lights: gfx::ConstantBuffer<Light> = "lights",
         out: gfx::BlendTarget<ColorFormat> =
         ("Target0", gfx::state::MASK_ALL, gfx::preset::blend::ALPHA),
         out_depth: gfx::DepthTarget<DepthFormat> =

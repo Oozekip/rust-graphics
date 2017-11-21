@@ -1,6 +1,5 @@
 use std::f32;
 
-use gfx;
 use gfx::{Resources, Slice};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
@@ -9,7 +8,7 @@ use na::Vector3;
 
 use color::Color;
 
-use program::{pipe, ColorFormat, DepthFormat, LightMeta, Vertex, MAX_LIGHTS};
+use program::{pipe, ColorFormat, DepthFormat, Vertex, MAX_LIGHTS};
 
 pub struct MeshData<R: Resources> {
     slice: Slice<R>,
@@ -28,10 +27,20 @@ impl<R: Resources> MeshData<R> {
     pub fn data_ref_mut<'a>(&'a mut self) -> &'a mut pipe::Data<R> {
         &mut self.data
     }
+
+    pub fn update_views(
+        &mut self,
+        color_view: RenderTargetView<R, ColorFormat>,
+        depth_view: DepthStencilView<R, DepthFormat>,
+    ) {
+        self.data.out = color_view;
+        self.data.out_depth = depth_view;
+    }
 }
 
 pub struct Mesh {
     vertex_list: Vec<Vector3<f32>>,
+    normal_list: Vec<Vector3<f32>>,
     tri_list: Vec<u32>,
 }
 
@@ -39,6 +48,7 @@ impl Mesh {
     pub fn new() -> Self {
         Mesh {
             vertex_list: Vec::new(),
+            normal_list: Vec::new(),
             tri_list: Vec::new(),
         }
     }
@@ -51,9 +61,12 @@ impl Mesh {
     ) -> Result<MeshData<R>, &'static str> {
         let mut vert_list = Vec::new();
 
-        for vert in &self.vertex_list {
+        for i in 0..self.vertex_list.len() {
+            let vert = self.vertex_list[i];
+            let norm = self.normal_list[i];
             vert_list.push(Vertex {
-                pos: vert.clone().into(),
+                pos: vert.into(),
+                normal: norm.into(),
                 color: Color::white().into(),
             });
         }
@@ -62,8 +75,7 @@ impl Mesh {
             factory.create_vertex_buffer_with_slice(vert_list.as_slice(), self.tri_list.as_slice());
 
         let constant_buffer = factory.create_constant_buffer(1);
-        //let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
-        let locals = LightMeta { count: 0 };
+        let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
 
         let light_meta = factory.create_constant_buffer(1);
 
@@ -75,7 +87,7 @@ impl Mesh {
                 out: color_view,
                 out_depth: depth_view,
                 light_meta: light_meta,
-                //lights: light_buffer,
+                lights: light_buffer,
             },
         })
     }
@@ -109,6 +121,7 @@ impl Mesh {
     }
 
     pub fn preprocess(&mut self) -> &mut Self {
+        self.compute_normals();
         self.move_to_origin();
         self
     }
@@ -136,6 +149,57 @@ impl Mesh {
             .fold(Vector3::new(0.0, 0.0, 0.0), |acc, &x| acc + x);
 
         sum / self.vertex_list.len() as f32
+    }
+
+    fn compute_normals(&mut self) {
+        self.normal_list.clear();
+        /*
+            Create list of normals for each vertex (Vec<Vec<Vector3>>)
+
+            For each triangle:
+                Compute tri normal
+                Add normal to list for each vertex (if it doesn't already exist)
+            Sum together and normalze vertex normals
+        */
+        let mut vert_tri_normals = Vec::new();
+
+        for _ in 0..self.vertex_list.len() {
+            vert_tri_normals.push(Vec::new());
+        }
+
+        let mut i = 0;
+
+        while i < self.tri_list.len() {
+            let first = &self.vertex_list[self.tri_list[i] as usize];
+            let second = &self.vertex_list[self.tri_list[i + 1] as usize];
+            let third = &self.vertex_list[self.tri_list[i + 2] as usize];
+
+            let a = second - first;
+            let b = third - first;
+
+            let norm = a.cross(&b).normalize();
+
+            for j in 0..3 {
+                let ind = self.tri_list[i + j] as usize;
+                let mut in_vec = &mut vert_tri_normals[ind];
+
+                // Insert normal into list iff it doesn't already exist
+                if let None = in_vec.iter().position(|x: &Vector3<f32>| x.eq(&norm)) {
+                    in_vec.push(norm);
+                }
+            }
+
+            i += 3;
+        }
+
+        // Sum together normals and normalize them
+        for vec_norms in &vert_tri_normals {
+            let norm = vec_norms
+                .iter()
+                .fold(Vector3::new(0.0, 0.0, 0.0), |acc, x| acc + x)
+                .normalize();
+            self.normal_list.push(norm);
+        }
     }
 
     fn move_to_origin(&mut self) {

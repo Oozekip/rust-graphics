@@ -9,9 +9,9 @@ use program::{pipe, Light, LightMeta, Transform, MAX_LIGHTS};
 use mesh::MeshData;
 
 pub struct Object {
-    position: Point3<f32>,  // Position
-    scale: Vector3<f32>,    // Scale amount
-    rotation: Vector3<f32>, // Euler angles
+    pub position: Point3<f32>,  // Position
+    pub scale: Vector3<f32>,    // Scale amount
+    pub rotation: Vector3<f32>, // Euler angles
 }
 
 impl Object {
@@ -53,9 +53,9 @@ pub fn upload_lights<R: Resources, C: CommandBuffer<R>>(
         )
         .unwrap();
 
-    // encoder
-    //     .update_buffer(&mesh_data.data_ref_mut().lights, &light_data, 0)
-    //     .unwrap()
+    encoder
+        .update_buffer(&mesh_data.data_ref_mut().lights, &light_data, 0)
+        .unwrap()
 }
 
 pub fn draw<R: Resources, C: CommandBuffer<R>>(
