@@ -9,8 +9,8 @@ use mesh::MeshData;
 use material::Material;
 
 pub struct Object {
-    pub position: Point3<f32>,  // Position
-    pub scale: Vector3<f32>,    // Scale amount
+    pub position: Point3<f32>, // Position
+    pub scale: Vector3<f32>, // Scale amount
     pub rotation: Vector3<f32>, // Euler angles
     pub material: Material,
 }
@@ -31,9 +31,9 @@ impl Object {
     }
 
     pub fn build_matrix(&self) -> Matrix4<f32> {
-        Matrix4::new_translation(&(self.position - Point3::new(0.0, 0.0, 0.0)))
-            * Matrix4::from_euler_angles(self.rotation.x, self.rotation.y, self.rotation.z)
-            * Matrix4::new_nonuniform_scaling(&self.scale)
+        Matrix4::new_translation(&(self.position - Point3::new(0.0, 0.0, 0.0))) *
+            Matrix4::from_euler_angles(self.rotation.x, self.rotation.y, self.rotation.z) *
+            Matrix4::new_nonuniform_scaling(&self.scale)
     }
 }
 

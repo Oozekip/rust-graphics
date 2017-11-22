@@ -118,11 +118,7 @@ pub fn upload_lights<R: Resources, C: CommandBuffer<R>>(
     encoder
         .update_buffer(
             &mesh_data.data_ref_mut().light_meta,
-            &[
-                LightMeta {
-                    count: count as i32,
-                },
-            ],
+            &[LightMeta { count: count as i32 }],
             0,
         )
         .unwrap();

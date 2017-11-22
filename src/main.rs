@@ -1,4 +1,4 @@
-#[macro_use]
+extern crate rgraphics;
 extern crate gfx;
 extern crate gfx_window_glutin;
 extern crate glutin;
@@ -14,21 +14,17 @@ use glutin::Api::OpenGl;
 
 use na::{Matrix4, Point3, Vector3};
 
-pub mod color;
-pub mod light;
-pub mod mesh;
-pub mod program;
-pub mod object;
-pub mod material;
-pub mod mesh_loader;
+use rgraphics as rg;
 
-use color::Color;
-use light::Light;
+use rg::color::Color;
+use rg::light::Light;
 // use mesh::Mesh;
-use program::{pipe, ColorFormat, DepthFormat};
-use material::Material;
-
-use object::Object;
+use rg::program::{pipe, ColorFormat, DepthFormat};
+use rg::material::Material;
+use rg::mesh_loader;
+use rg::light;
+use rg::object;
+use rg::object::Object;
 
 fn main() {
     let mut width = 800;
@@ -89,15 +85,15 @@ fn main() {
 
     let lights = vec![
         Light::new_point(
-            Point3::new(0.0, 0.0, 0.0),
-            // Vector3::new(0.0, 0.0, -1.0),
-            // f32::to_radians(15.0),
-            // f32::to_radians(30.0),
-            // 1.0,
-            Color::white(),
-            Color::white(),
-            Color::white(),
-        );
+        Point3::new(0.0, 0.0, 0.0),
+        // Vector3::new(0.0, 0.0, -1.0),
+        // f32::to_radians(15.0),
+        // f32::to_radians(30.0),
+        // 1.0,
+        Color::white(),
+        Color::white(),
+        Color::white()
+    );
         LIGHT_COUNT
     ];
 
@@ -162,11 +158,9 @@ fn main() {
                     // Receive window closed event or excape key pressed
                     WindowEvent::Closed |
                     WindowEvent::KeyboardInput {
-                        input:
-                            glutin::KeyboardInput {
-                                virtual_keycode: Some(glutin::VirtualKeyCode::Escape),
-                                ..
-                            },
+                        input: glutin::KeyboardInput {
+                            virtual_keycode: Some(glutin::VirtualKeyCode::Escape), ..
+                        },
                         ..
                     } => running = false,
 

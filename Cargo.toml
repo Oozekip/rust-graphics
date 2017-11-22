@@ -3,6 +3,10 @@ name = "rust-test"
 version = "0.1.0"
 authors = ["Philip Nygard <oozekip@gmail.com>"]
 
+[lib]
+name = "rgraphics"
+path = "src/lib.rs"
+
 [dependencies]
 gfx = "0.16"
 glutin = "0.10"

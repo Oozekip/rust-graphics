@@ -3,18 +3,18 @@ use std::u32;
 use std::str::FromStr;
 
 use std::fs::File;
-use std::error::Error;
-use std::io::Read;
+use std::io;
+use std::io::{Read};
 use na::Vector3;
 use regex::Regex;
 
 use mesh::Mesh;
 
-pub fn load_file(file_path: &str) -> Result<Mesh, String> {
+pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
     let res = File::open(file_path);
 
     match res {
-        Result::Err(what) => Result::Err(String::from(what.description())),
+        Result::Err(what) => Result::Err(what),
         Result::Ok(mut file) => {
             let mut mesh = Mesh::new();
             let mut content = String::new();
@@ -26,9 +26,9 @@ pub fn load_file(file_path: &str) -> Result<Mesh, String> {
             file.read_to_string(&mut content).unwrap();
 
             let initial = (Vec::new(), Vec::new());
-            let (verts, tris) = content
-                .lines()
-                .fold(initial, |(mut verts, mut tris), line| {
+            let (verts, tris) = content.lines().fold(
+                initial,
+                |(mut verts, mut tris), line| {
                     if let Option::Some(caps) = vert_reg.captures(&line) {
                         let x = f32::from_str(&caps[1]).unwrap();
                         let y = f32::from_str(&caps[2]).unwrap();
@@ -44,10 +44,12 @@ pub fn load_file(file_path: &str) -> Result<Mesh, String> {
                     }
 
                     (verts, tris)
-                });
+                },
+            );
 
-            mesh.add_tris(tris.as_slice())
-                .add_verticies(verts.as_slice());
+            mesh.add_tris(tris.as_slice()).add_verticies(
+                verts.as_slice(),
+            );
 
             mesh.preprocess_compute_normals();
             Result::Ok(mesh)
