@@ -6,8 +6,6 @@ use gfx::traits::FactoryExt;
 
 use na::Vector3;
 
-use color::Color;
-
 use program::{pipe, ColorFormat, DepthFormat, Vertex, MAX_LIGHTS};
 
 pub struct MeshData<R: Resources> {
@@ -70,7 +68,6 @@ impl Mesh {
                 vert_list.push(Vertex {
                     pos: vert.into(),
                     normal: norm.into(),
-                    color: Color::white().into(),
                 });
             }
 

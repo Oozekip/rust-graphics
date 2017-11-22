@@ -2,7 +2,6 @@
 
 const int MAX_LIGHTS = 8;
 
-in vec4 worldFragColor;
 in vec4 worldNormal;
 in vec4 worldPos;
 
@@ -115,7 +114,7 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
         litColor += ambient +  spotlight * attenuation * (diff + spec);
     }
 
-    return vec4(litColor.rgb, worldFragColor.a);
+    return vec4(litColor.rgb, 1);
 }
 
 void main()

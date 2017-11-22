@@ -9,7 +9,6 @@ gfx_defines!{
     vertex Vertex{
         pos: [f32;3] = "vPos",
         normal: [f32;3] = "vNormal",
-        color: [f32;4] = "vColor",
     }
 
     constant MaterialData{

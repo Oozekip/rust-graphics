@@ -88,9 +88,9 @@ fn main() {
     const LIGHT_COUNT: usize = 1;
 
     let lights = vec![
-        Light::new_directional(
-            // Point3::new(0.0, 0.0, 0.0),
-            Vector3::new(0.0, 0.0, -1.0),
+        Light::new_point(
+            Point3::new(0.0, 0.0, 0.0),
+            // Vector3::new(0.0, 0.0, -1.0),
             // f32::to_radians(15.0),
             // f32::to_radians(30.0),
             // 1.0,
