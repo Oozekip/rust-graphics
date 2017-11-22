@@ -13,17 +13,17 @@ pub enum Material {
 
 impl Into<MaterialData> for Material {
     fn into(self) -> MaterialData {
-        match &self {
-            &Material::Untextured {
-                diffuse_color: diffuse,
-                ambient_color: ambient,
-                specular_color: specular,
-                specular_power: power,
+        match self {
+            Material::Untextured {
+                diffuse_color,
+                ambient_color,
+                specular_color,
+                specular_power,
             } => MaterialData {
-                diffuse_color: diffuse.into(),
-                specular_color: specular.into(),
-                ambient_color: ambient.into(),
-                specular_power: power,
+                diffuse_color: diffuse_color.into(),
+                specular_color: specular_color.into(),
+                ambient_color: ambient_color.into(),
+                specular_power: specular_power,
             },
         }
     }

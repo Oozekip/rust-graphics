@@ -53,7 +53,7 @@ pub fn draw<R: Resources, C: CommandBuffer<R>>(
     view: &Matrix4<f32>,
     projection: &Matrix4<f32>,
 ) {
-    let trans_data = create_transform(&obj, view.clone(), projection.clone());
+    let trans_data = create_transform(obj, *view, *projection);
 
     encoder
         .update_buffer(&mesh_data.data_ref_mut().transform, &[trans_data], 0)
@@ -62,11 +62,11 @@ pub fn draw<R: Resources, C: CommandBuffer<R>>(
     encoder
         .update_buffer(
             &mesh_data.data_ref_mut().material,
-            &[obj.material.clone().into()],
+            &[obj.material.into()],
             0,
         )
         .unwrap(); //update buffers
 
     // draw commands with buffer data and attached pso
-    encoder.draw(&mesh_data.slice_ref(), &program, mesh_data.data_ref());
+    encoder.draw(mesh_data.slice_ref(), program, mesh_data.data_ref());
 }

@@ -29,13 +29,13 @@ pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
             let (verts, tris) = content.lines().fold(
                 initial,
                 |(mut verts, mut tris), line| {
-                    if let Option::Some(caps) = vert_reg.captures(&line) {
+                    if let Option::Some(caps) = vert_reg.captures(line) {
                         let x = f32::from_str(&caps[1]).unwrap();
                         let y = f32::from_str(&caps[2]).unwrap();
                         let z = f32::from_str(&caps[3]).unwrap();
 
                         verts.push(Vector3::new(x, y, z));
-                    } else if let Option::Some(caps) = tri_reg.captures(&line) {
+                    } else if let Option::Some(caps) = tri_reg.captures(line) {
                         let x = u32::from_str(&caps[1]).unwrap() - 1;
                         let y = u32::from_str(&caps[2]).unwrap() - 1;
                         let z = u32::from_str(&caps[3]).unwrap() - 1;

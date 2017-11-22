@@ -14,15 +14,15 @@ pub struct MeshData<R: Resources> {
 }
 
 impl<R: Resources> MeshData<R> {
-    pub fn slice_ref<'a>(&'a self) -> &'a Slice<R> {
+    pub fn slice_ref(&self) -> &Slice<R> {
         &self.slice
     }
 
-    pub fn data_ref<'a>(&'a self) -> &'a pipe::Data<R> {
+    pub fn data_ref(&self) -> &pipe::Data<R> {
         &self.data
     }
 
-    pub fn data_ref_mut<'a>(&'a mut self) -> &'a mut pipe::Data<R> {
+    pub fn data_ref_mut(&mut self) -> &mut pipe::Data<R> {
         &mut self.data
     }
 
@@ -36,6 +36,7 @@ impl<R: Resources> MeshData<R> {
     }
 }
 
+#[derive(Default)]
 pub struct Mesh {
     vertex_list: Vec<Vector3<f32>>,
     normal_list: Vec<Vector3<f32>>,
@@ -100,7 +101,7 @@ impl Mesh {
     }
 
     pub fn add_vertex(&mut self, vert: &Vector3<f32>) -> &mut Self {
-        self.vertex_list.push(vert.clone());
+        self.vertex_list.push(*vert);
         self
     }
 
@@ -113,7 +114,7 @@ impl Mesh {
     }
 
     pub fn add_normal(&mut self, vert: &Vector3<f32>) -> &mut Self {
-        self.normal_list.push(vert.clone());
+        self.normal_list.push(*vert);
         self
     }
 
@@ -134,7 +135,7 @@ impl Mesh {
 
     pub fn add_tris(&mut self, tris: &[(u32, u32, u32)]) -> &mut Self {
         for tri in tris {
-            self.add_tri(tri.clone());
+            self.add_tri(*tri);
         }
 
         self
@@ -214,7 +215,7 @@ impl Mesh {
                 let in_vec = &mut vert_tri_normals[ind];
 
                 // Insert normal into list iff it doesn't already exist
-                if let None = in_vec.iter().position(|x: &Vector3<f32>| x.eq(&norm)) {
+                if in_vec.iter().position(|x: &Vector3<f32>| x.eq(&norm)).is_none() {
                     in_vec.push(norm);
                 }
             }

@@ -51,10 +51,10 @@ impl Color {
 impl Into<Vector4<f32>> for Color {
     fn into(self) -> Vector4<f32> {
         Vector4::new(
-            (self.r as f32) / 255.0,
-            (self.g as f32) / 255.0,
-            (self.b as f32) / 255.0,
-            (self.a as f32) / 255.0,
+            (f32::from(self.r)) / 255.0,
+            (f32::from(self.g)) / 255.0,
+            (f32::from(self.b)) / 255.0,
+            (f32::from(self.a)) / 255.0,
         )
     }
 }
@@ -62,10 +62,10 @@ impl Into<Vector4<f32>> for Color {
 impl Into<[f32; 4]> for Color {
     fn into(self) -> [f32; 4] {
         [
-            (self.r as f32) / 255.0,
-            (self.g as f32) / 255.0,
-            (self.b as f32) / 255.0,
-            (self.a as f32) / 255.0,
+            (f32::from(self.r)) / 255.0,
+            (f32::from(self.g)) / 255.0,
+            (f32::from(self.b)) / 255.0,
+            (f32::from(self.a)) / 255.0,
         ]
     }
 }
