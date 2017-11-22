@@ -115,6 +115,19 @@ impl Mesh {
         self
     }
 
+    pub fn add_normal(&mut self, vert: &Vector3<f32>) -> &mut Self {
+        self.normal_list.push(vert.clone());
+        self
+    }
+
+    pub fn add_normals(&mut self, verts: &[Vector3<f32>]) -> &mut Self {
+        for vert in verts {
+            self.add_normal(vert);
+        }
+
+        self
+    }
+
     pub fn add_tri(&mut self, (first, second, third): (u32, u32, u32)) -> &mut Self {
         self.tri_list.push(first);
         self.tri_list.push(second);
@@ -131,26 +144,38 @@ impl Mesh {
     }
 
     pub fn preprocess(&mut self) -> &mut Self {
-        self.compute_normals();
+        self.normalize_size();
         self.move_to_origin();
         self
     }
 
+    pub fn preprocess_compute_normals(&mut self) -> &mut Self {
+        self.preprocess();
+        self.compute_normals();
+        self
+    }
+
     pub fn extents(&self) -> (Vector3<f32>, Vector3<f32>) {
-        let mut curr_min = Vector3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
-        let mut curr_max = Vector3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        self.vertex_list.iter().fold(
+            (
+                Vector3::from_element(f32::INFINITY),
+                Vector3::from_element(f32::NEG_INFINITY),
+            ),
+            |(min, max), vert| {
+                let curr_min = Vector3::new(
+                    f32::min(min.x, vert.x),
+                    f32::min(min.y, vert.y),
+                    f32::min(min.z, vert.z),
+                );
+                let curr_max = Vector3::new(
+                    f32::max(max.x, vert.x),
+                    f32::max(max.y, vert.y),
+                    f32::max(max.z, vert.z),
+                );
 
-        for vert in &self.vertex_list {
-            curr_min.x = f32::min(curr_min.x, vert.x);
-            curr_min.y = f32::min(curr_min.y, vert.y);
-            curr_min.z = f32::min(curr_min.z, vert.z);
-
-            curr_max.x = f32::max(curr_max.x, vert.x);
-            curr_max.y = f32::max(curr_max.y, vert.y);
-            curr_max.z = f32::max(curr_max.z, vert.z);
-        }
-
-        (curr_min, curr_max)
+                (curr_min, curr_max)
+            },
+        )
     }
 
     pub fn centroid(&self) -> Vector3<f32> {
@@ -163,14 +188,12 @@ impl Mesh {
 
     fn compute_normals(&mut self) {
         self.normal_list.clear();
-        /*
-            Create list of normals for each vertex (Vec<Vec<Vector3>>)
+        // Create list of normals for each vertex (Vec<Vec<Vector3>>)
 
-            For each triangle:
-                Compute tri normal
-                Add normal to list for each vertex (if it doesn't already exist)
-            Sum together and normalze vertex normals
-        */
+        // For each triangle:
+        //     Compute tri normal
+        //     Add normal to list for each vertex (if it doesn't already exist)
+        // Sum together and normalze vertex normals
         let mut vert_tri_normals = Vec::new();
 
         for _ in 0..self.vertex_list.len() {
@@ -191,7 +214,7 @@ impl Mesh {
 
             for j in 0..3 {
                 let ind = self.tri_list[i + j] as usize;
-                let mut in_vec = &mut vert_tri_normals[ind];
+                let in_vec = &mut vert_tri_normals[ind];
 
                 // Insert normal into list iff it doesn't already exist
                 if let None = in_vec.iter().position(|x: &Vector3<f32>| x.eq(&norm)) {
@@ -199,6 +222,7 @@ impl Mesh {
                 }
             }
 
+            // Move forward three indicies (one tri)
             i += 3;
         }
 
@@ -208,8 +232,23 @@ impl Mesh {
                 .iter()
                 .fold(Vector3::new(0.0, 0.0, 0.0), |acc, x| acc + x)
                 .normalize();
-            self.normal_list.push(norm);
+            self.add_normal(&norm);
         }
+    }
+
+    fn normalize_size(&mut self) {
+        let (min, max) = self.extents();
+        let diff = max - min;
+        let x = f32::abs(diff.x);
+        let y = f32::abs(diff.y);
+        let z = f32::abs(diff.z);
+
+        let max_extent = f32::max(x, f32::max(y, z));
+
+        self.vertex_list = self.vertex_list
+            .iter()
+            .map(|vert| (1.0 / max_extent) * vert)
+            .collect();
     }
 
     fn move_to_origin(&mut self) {

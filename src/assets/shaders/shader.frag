@@ -32,6 +32,7 @@ uniform lightMeta
     int lightCount;
 };
 
+layout(std140)
 uniform lightData
 {
     Light lights[MAX_LIGHTS];
