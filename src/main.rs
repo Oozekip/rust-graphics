@@ -25,6 +25,7 @@ use rg::mesh_loader;
 use rg::light;
 use rg::object;
 use rg::object::Object;
+use rgraphics::texture;
 
 fn main() {
     let mut width = 800;
@@ -53,19 +54,6 @@ fn main() {
 
     let mut running = true;
 
-    let mat = Material::Untextured {
-        diffuse_color: Color::rgb(128, 0, 0),
-        ambient_color: Color::black(),
-        specular_color: Color::red(),
-        specular_power: 5.0,
-    };
-
-    let mut model_trans = Object::new(
-        mat,
-        Point3::new(0.0, 0.0, -1.0),
-        Vector3::from_element(0.5),
-        Vector3::zeros(),
-    );
 
     let mut model_trans2 = Object::new(
         Material::Untextured {
@@ -109,6 +97,22 @@ fn main() {
         LIGHT_COUNT
     ];
 
+    let diff_tex = texture::load_texture(&mut factory, "src/assets/textures/diffuse.tga").unwrap();
+    let spec_tex = texture::load_texture(&mut factory, "src/assets/textures/specular.tga").unwrap();
+
+    let mat = Material::Textured {
+        diffuse_texture: diff_tex,
+        specular_texture: spec_tex,
+        ambient_color: Color::black(),
+    };
+
+    let mut model_trans = Object::new(
+        mat,
+        Point3::new(0.0, 0.0, -1.0),
+        Vector3::from_element(0.5),
+        Vector3::zeros(),
+    );
+
     let bunny_mesh = mesh_loader::load_file("src/assets/models/bunny.obj").unwrap();
     let horse_mesh = mesh_loader::load_file("src/assets/models/horse.obj").unwrap();
     //let cube_mesh = mesh_loader::load_file("src/assets/models/cube.obj").unwrap();
@@ -127,6 +131,7 @@ fn main() {
     light::upload_lights(&mut encoder, &mut bunny_data, lights.as_slice());
     light::upload_lights(&mut encoder, &mut horse_data, lights.as_slice());
 
+    println!("Running");
     while running {
         // Update times and get dt
         let curr_time = time::now();
@@ -183,8 +188,13 @@ fn main() {
 
         // Rotate the cube
         model_trans.rotation += Vector3::new(45f32.to_radians(), 90f32.to_radians(), 0.0) * dt;
-        model_trans2.rotation += Vector3::new((-45f32).to_radians(), (-90f32).to_radians(), 0.0) * dt;
-        model_trans2.position = Point3::new(f32::cos(elapsed_time) * 2.0, 0.0 , f32::sin(elapsed_time) * 2.0 + -1.0);
+        model_trans2.rotation +=
+            Vector3::new((-45f32).to_radians(), (-90f32).to_radians(), 0.0) * dt;
+        model_trans2.position = Point3::new(
+            f32::cos(elapsed_time) * 2.0,
+            0.0,
+            f32::sin(elapsed_time) * 2.0 + -1.0,
+        );
         // Clear buffers
         encoder.clear(&color_view, Color::black().into());
         encoder.clear_depth(&depth_view, 1.0);

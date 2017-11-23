@@ -3,6 +3,7 @@
 in vec3 vPos;
 in vec3 vNormal;
 
+layout(std140)
 uniform Transform{
      mat4 model;
      mat4 view;

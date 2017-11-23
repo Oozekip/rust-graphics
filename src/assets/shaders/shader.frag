@@ -5,6 +5,9 @@ const int MAX_LIGHTS = 8;
 in vec4 worldNormal;
 in vec4 worldPos;
 
+uniform sampler diffuseTexture;
+// uniform sampler specularTexture
+
 struct Light
 {
     vec4 diffuse;
@@ -18,14 +21,17 @@ struct Light
     float spotlightFalloff;
 };
 
-// layout(std140)
+layout(std140)
 uniform materialData{
     vec4 m_diffuse;
     vec4 m_ambient;
     vec4 m_specular;
     float m_specularPower;
+    bool m_useDiffuseTexture;
+    bool m_useSpecularTexture;
 };
 
+layout(std140)
 uniform lightMeta
 {
     int lightCount;
@@ -77,7 +83,7 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
 
 
         vec4 ambient = computeAmbient(light.ambient, m_ambient); 
-        vec4 diff = computeDiffuse(worldNorm, L, light.diffuse, m_diffuse);
+        vec4 diff = computeDiffuse(worldNorm, L, light.diffuse, texture2D(diffuseTexture, vec2(worldPos.x, worldPos.y)));
         vec4 spec = computeSpecular(worldNorm, L, vec4(0, 0, -1, 0), light.specular, m_specular, m_specularPower);
 
         float dv = length(-vec4(worldPos.xyz, 0));

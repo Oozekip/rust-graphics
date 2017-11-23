@@ -1,12 +1,17 @@
 use std::f32;
 
+use image;
 use gfx::{Resources, Slice};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
+use gfx::format::Rgba8;
 
 use na::Vector3;
 
+use texture::Texture;
+
 use program::{pipe, ColorFormat, DepthFormat, Vertex, MAX_LIGHTS};
+
 
 pub struct MeshData<R: Resources> {
     slice: Slice<R>,
@@ -34,6 +39,18 @@ impl<R: Resources> MeshData<R> {
         self.data.out = color_view;
         self.data.out_depth = depth_view;
     }
+
+    pub fn update_diffuse_texture(&mut self, tex: Texture<R>) {
+        let (_, sampler) = self.data.diffuse_texture.clone();
+
+        self.data.diffuse_texture = (tex, sampler);
+    }
+
+    // pub fn update_specular_texture(&mut self, tex: Texture<R>){
+    //     let (_, sampler) = self.data.diffuse_texture.clone();
+
+    //     self.data.specular_texture = (tex, sampler);
+    // }
 }
 
 #[derive(Default)]
@@ -85,6 +102,18 @@ impl Mesh {
             let light_buffer = factory.create_constant_buffer(MAX_LIGHTS);
             let light_meta = factory.create_constant_buffer(1);
 
+            use gfx::texture as t;
+
+            let sampler = factory.create_sampler_linear();
+
+            // Width/height have to be power of 2, so blank texture must be minumum 1x1
+            let img = image::DynamicImage::new_rgba8(1, 1).to_rgba();   
+            let kind = t::Kind::D2(img.width() as t::Size, img.height() as t::Size, t::AaMode::Single);
+
+            let (_, empty_tex) = factory
+                .create_texture_immutable_u8::<Rgba8>(kind, &[&img])
+                .unwrap();
+
             Result::Ok(MeshData {
                 slice: slice,
                 data: pipe::Data {
@@ -95,6 +124,7 @@ impl Mesh {
                     light_meta: light_meta,
                     lights: light_buffer,
                     material: material_buffer,
+                    diffuse_texture: (empty_tex, sampler),
                 },
             })
         }
@@ -215,7 +245,11 @@ impl Mesh {
                 let in_vec = &mut vert_tri_normals[ind];
 
                 // Insert normal into list iff it doesn't already exist
-                if in_vec.iter().position(|x: &Vector3<f32>| x.eq(&norm)).is_none() {
+                if in_vec
+                    .iter()
+                    .position(|x: &Vector3<f32>| x.eq(&norm))
+                    .is_none()
+                {
                     in_vec.push(norm);
                 }
             }
