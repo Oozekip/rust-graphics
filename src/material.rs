@@ -18,12 +18,15 @@ pub enum Material<R: Resources> {
     },
 }
 
-impl<R: Resources> Material<R>{
-    pub fn get_diffuse(&self) -> Option<&Texture<R>>{
-        if let Material::Textured{ref diffuse_texture, ..} = *self{
+impl<R: Resources> Material<R> {
+    pub fn get_diffuse(&self) -> Option<&Texture<R>> {
+        if let Material::Textured {
+            ref diffuse_texture,
+            ..
+        } = *self
+        {
             Some(diffuse_texture)
-        }
-        else{
+        } else {
             None
         }
     }
@@ -42,20 +45,16 @@ impl<R: Resources> Into<MaterialData> for Material<R> {
                 specular_color: specular_color.into(),
                 ambient_color: ambient_color.into(),
                 specular_power: specular_power,
-                use_diffuse_texture: false,
-                _udt_padding: [false; 3],
-                use_specular_texture: false,
+                use_diffuse_texture: 0,
+                use_specular_texture: 0,
             },
-            Material::Textured {
-                ambient_color, ..
-            } => MaterialData {
+            Material::Textured { ambient_color, .. } => MaterialData {
                 diffuse_color: Color::black().into(),
                 specular_color: Color::black().into(),
                 ambient_color: ambient_color.into(),
                 specular_power: 1.0,
-                use_diffuse_texture: true,
-                _udt_padding: [false; 3],
-                use_specular_texture: true,
+                use_diffuse_texture: 1,
+                use_specular_texture: 1,
             },
         }
     }

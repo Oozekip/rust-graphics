@@ -60,7 +60,7 @@ fn main() {
             diffuse_color: Color::gray(),
             ambient_color: Color::black(),
             specular_color: Color::white(),
-            specular_power: 3.0,
+            specular_power: 1.0,
         },
         Point3::new(-0.25, 0.0, -8.0),
         Vector3::from_element(0.5),
@@ -107,11 +107,12 @@ fn main() {
     };
 
     // let mat = Material::Untextured {
-    //         diffuse_color: Color::gray(),
-    //         ambient_color: Color::black(),
-    //         specular_color: Color::white(),
-    //         specular_power: 3.0,
-    //     };
+    //     diffuse_color: Color::rgb(128, 0, 0),
+    //     ambient_color: Color::black(),
+    //     specular_color: Color::red(),
+    //     specular_power: 5.0,
+    // };
+    
     let mut model_trans = Object::new(
         mat,
         Point3::new(0.0, 0.0, -1.0),

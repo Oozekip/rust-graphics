@@ -28,8 +28,8 @@ uniform materialData{
     vec4 m_ambient;
     vec4 m_specular;
     float m_specularPower;
-    bool m_useDiffuseTexture;
-    bool m_useSpecularTexture;
+    int m_useDiffuseTexture;
+    int m_useSpecularTexture;
 };
 
 layout(std140)
@@ -84,9 +84,9 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
                 break;
         }
 
-        vec4 diffColor = (m_useDiffuseTexture) ? texture2D(diffuseTexture, UV): m_diffuse;
-        vec4 specColor = (m_useSpecularTexture) ? texture2D(specularTexture, UV): m_specular;
-        float specPower = (m_useSpecularTexture) ? specColor.r * 255: m_specularPower;
+        vec4 diffColor = (m_useDiffuseTexture != 0) ? texture2D(diffuseTexture, UV): m_diffuse;
+        vec4 specColor = (m_useSpecularTexture != 0) ? texture2D(specularTexture, UV): m_specular;
+        float specPower = (m_useSpecularTexture != 0) ? specColor.r * 255: m_specularPower;
 
         vec4 ambient = computeAmbient(light.ambient, m_ambient); 
         vec4 diff = computeDiffuse(worldNorm, L, light.diffuse, diffColor);

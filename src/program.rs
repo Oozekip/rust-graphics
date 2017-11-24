@@ -18,9 +18,8 @@ gfx_defines!{
         ambient_color: [f32; 4] = "m_ambient",
         specular_color: [f32; 4] = "m_specular",
         specular_power: f32 = "m_specularPower",
-        use_diffuse_texture: bool = "m_useDiffuseTexture",
-        _udt_padding: [bool; 3] = "",
-        use_specular_texture: bool = "m_useSpecularTexture",
+        use_diffuse_texture: i32 = "m_useDiffuseTexture",
+        use_specular_texture: i32 = "m_useSpecularTexture",
     }
 
     constant LightData{
