@@ -4,9 +4,10 @@ const int MAX_LIGHTS = 8;
 
 in vec4 worldNormal;
 in vec4 worldPos;
+in vec2 UV;
 
-uniform sampler diffuseTexture;
-// uniform sampler specularTexture
+uniform sampler2D diffuseTexture;
+uniform sampler2D specularTexture;
 
 struct Light
 {
@@ -43,7 +44,6 @@ uniform lightData
     Light lights[MAX_LIGHTS];
 };
 
-
 out vec4 Target0;
 
 vec4 computeDiffuse(in vec4 N, in vec4 L, in vec4 iD, in vec4 kD)
@@ -60,7 +60,10 @@ vec4 computeSpecular(in vec4 N, in vec4 L, in vec4 V, in vec4 iS, in vec4 kS, fl
 {
     vec4 R = normalize(reflect(L, normalize(N)));
 
-    return iS * kS * pow(clamp(dot(R, V), 0, 1), power);
+    // pow(<= 0) is undefined in GLSL
+    float finalPower = (power != 0) ? pow(clamp(dot(R, V), 0, 1), power): 1;
+    
+    return iS * kS * finalPower;
 }
 
 vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
@@ -81,10 +84,13 @@ vec4 computeLighting(in vec4 worldNorm, in vec4 worldPos){
                 break;
         }
 
+        vec4 diffColor = (m_useDiffuseTexture) ? texture2D(diffuseTexture, UV): m_diffuse;
+        vec4 specColor = (m_useSpecularTexture) ? texture2D(specularTexture, UV): m_specular;
+        float specPower = (m_useSpecularTexture) ? specColor.r * 255: m_specularPower;
 
         vec4 ambient = computeAmbient(light.ambient, m_ambient); 
-        vec4 diff = computeDiffuse(worldNorm, L, light.diffuse, texture2D(diffuseTexture, vec2(worldPos.x, worldPos.y)));
-        vec4 spec = computeSpecular(worldNorm, L, vec4(0, 0, -1, 0), light.specular, m_specular, m_specularPower);
+        vec4 diff = computeDiffuse(worldNorm, L, light.diffuse, diffColor);
+        vec4 spec = computeSpecular(worldNorm, L, vec4(0, 0, -1, 0), light.specular, specColor, specPower);
 
         float dv = length(-vec4(worldPos.xyz, 0));
 

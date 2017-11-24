@@ -66,11 +66,12 @@ pub fn draw<R: Resources, C: CommandBuffer<R>>(
     // Set texture
     if let Material::Textured {
         ref diffuse_texture,
+        ref specular_texture,
         ..
     } = obj.material
     {
-        //mesh_data.update_diffuse_texture(diffuse_texture.clone());
-        //mesh_data.update_specular_texture(specular_texture.clone());
+        mesh_data.update_diffuse_texture(diffuse_texture.clone());
+        mesh_data.update_specular_texture(specular_texture.clone());
     }
 
     encoder

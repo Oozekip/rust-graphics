@@ -23,7 +23,7 @@ pub fn load_texture<R: Resources, F: FactoryExt<R>>(
             let kind = t::Kind::D2(width as t::Size, height as t::Size, t::AaMode::Single);
 
             let result =
-                factory.create_texture_immutable_u8::<Rgba8>(kind, &[img.into_raw().as_slice()]);
+                factory.create_texture_immutable_u8::<Rgba8>(kind, &[&img]);
 
             match result {
                 Ok((_, view)) => Ok(view),

@@ -1,6 +1,6 @@
 
 use gfx;
-use gfx::format::{Srgba8, DepthStencil};
+use gfx::format::{DepthStencil, Srgba8};
 
 pub type ColorFormat = Srgba8;
 pub type DepthFormat = DepthStencil;
@@ -10,6 +10,7 @@ gfx_defines!{
     vertex Vertex{
         pos: [f32;3] = "vPos",
         normal: [f32;3] = "vNormal",
+        uv: [f32; 2] = "vUV",
     }
 
     constant MaterialData{
@@ -28,7 +29,6 @@ gfx_defines!{
         specular_color: [f32; 4] = "specular",
         position: [f32;4] = "position",
         direction: [f32;4] = "direction",
-        // specular_texture: gfx::TextureSampler<[f32;4]> = "specularTexture",
         light_type: i32 = "type",
         spotlight_outer: f32 = "spotlightOuter",
         spotlight_inner: f32 = "spotlightInner",
@@ -52,6 +52,7 @@ gfx_defines!{
         transform: gfx::ConstantBuffer<Transform> = "Transform",
         material: gfx::ConstantBuffer<MaterialData> = "materialData",
         diffuse_texture: gfx::TextureSampler<[f32;4]> = "diffuseTexture",
+        specular_texture: gfx::TextureSampler<[f32;4]> = "specularTexture",
         light_meta: gfx::ConstantBuffer<LightMeta> = "lightMeta",
         lights: gfx::ConstantBuffer<LightData> = "lightData",
         out: gfx::BlendTarget<ColorFormat> =

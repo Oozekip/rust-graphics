@@ -106,15 +106,21 @@ fn main() {
         ambient_color: Color::black(),
     };
 
+    // let mat = Material::Untextured {
+    //         diffuse_color: Color::gray(),
+    //         ambient_color: Color::black(),
+    //         specular_color: Color::white(),
+    //         specular_power: 3.0,
+    //     };
     let mut model_trans = Object::new(
         mat,
         Point3::new(0.0, 0.0, -1.0),
-        Vector3::from_element(0.5),
+        Vector3::from_element(0.25),
         Vector3::zeros(),
     );
 
-    let bunny_mesh = mesh_loader::load_file("src/assets/models/bunny.obj").unwrap();
-    let horse_mesh = mesh_loader::load_file("src/assets/models/horse.obj").unwrap();
+    let bunny_mesh = mesh_loader::load_file("src/assets/models/suzanne.obj").unwrap();
+    let horse_mesh = mesh_loader::load_file("src/assets/models/cube.obj").unwrap();
     //let cube_mesh = mesh_loader::load_file("src/assets/models/cube.obj").unwrap();
 
     let mut bunny_data = bunny_mesh
