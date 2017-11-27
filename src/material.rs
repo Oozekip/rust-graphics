@@ -18,20 +18,6 @@ pub enum Material<R: Resources> {
     },
 }
 
-impl<R: Resources> Material<R> {
-    pub fn get_diffuse(&self) -> Option<&Texture<R>> {
-        if let Material::Textured {
-            ref diffuse_texture,
-            ..
-        } = *self
-        {
-            Some(diffuse_texture)
-        } else {
-            None
-        }
-    }
-}
-
 impl<R: Resources> Into<MaterialData> for Material<R> {
     fn into(self) -> MaterialData {
         match self {

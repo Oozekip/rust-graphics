@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate gfx;
+extern crate image;
 extern crate nalgebra as na;
 extern crate regex;
-extern crate image;
 
 pub mod color;
 pub mod light;
@@ -12,3 +12,4 @@ pub mod object;
 pub mod material;
 pub mod mesh_loader;
 pub mod texture;
+pub mod utility;

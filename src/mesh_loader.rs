@@ -1,23 +1,20 @@
 use std::f32;
 use std::u32;
 use std::str::FromStr;
-
-use std::fs::File;
 use std::io;
-use std::io::Read;
+
 use na::{Vector2, Vector3};
-use regex::Regex;
+use regex::{Captures, Regex};
 
 use mesh::Mesh;
 use program::Vertex;
+use utility;
 
-fn read_in(file_path: &str) -> Result<String, io::Error> {
-    let mut file = File::open(file_path)?;
-
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
-    Ok(content)
-}
+type UVMapFn = fn(&Vector3<f32>) -> Vector2<f32>;
+type NormalComputeFn = fn(&[Vector3<f32>], &[(u32, u32, u32)])
+    -> Vec<Vector3<f32>>;
+type VertexIndex = (u32, u32, u32);
+type Triangle = (VertexIndex, VertexIndex, VertexIndex);
 
 fn find_or_insert<T: Eq + Clone>(val: &T, cont: &mut Vec<T>) -> usize {
     let index;
@@ -32,45 +29,211 @@ fn find_or_insert<T: Eq + Clone>(val: &T, cont: &mut Vec<T>) -> usize {
     index
 }
 
-// pub fn load_file_vertex_only(file_path: &str) -> Result<Mesh, io::Error> {
-//     let content = read_in(file_path)?;
+fn get_extents(verts: &[Vector3<f32>]) -> (Vector3<f32>, Vector3<f32>) {
+    verts.iter().fold(
+        (
+            Vector3::from_element(f32::INFINITY),
+            Vector3::from_element(f32::NEG_INFINITY),
+        ),
+        |(min, max), vert| {
+            let curr_min = Vector3::new(
+                f32::min(min.x, vert.x),
+                f32::min(min.y, vert.y),
+                f32::min(min.z, vert.z),
+            );
+            let curr_max = Vector3::new(
+                f32::max(max.x, vert.x),
+                f32::max(max.y, vert.y),
+                f32::max(max.z, vert.z),
+            );
 
-//     let mut mesh = Mesh::new();
-//     let tri_reg = Regex::new(r"^(?:f) (\d+) (\d+) (\d+)").unwrap();
-//     let vert_reg = Regex::new(
-//         r"^(?:v) (-?[\d]+(?:\.[\d]+)?) (-?[\d]+(?:\.[\d]+)?) (-?[\d]+(?:\.[\d]+)?)",
-//     ).unwrap();
+            (curr_min, curr_max)
+        },
+    )
+}
 
-//     let initial = (Vec::new(), Vec::new());
-//     let (verts, tris) = content
-//         .lines()
-//         .fold(initial, |(mut verts, mut tris), line| {
-//             if let Option::Some(caps) = vert_reg.captures(line) {
-//                 let x = f32::from_str(&caps[1]).unwrap();
-//                 let y = f32::from_str(&caps[2]).unwrap();
-//                 let z = f32::from_str(&caps[3]).unwrap();
+fn normalize_scale(verts: &[Vector3<f32>]) -> Vec<Vector3<f32>> {
+    let (min, max) = get_extents(verts);
+    let diff = max - min;
+    let x = f32::abs(diff.x);
+    let y = f32::abs(diff.y);
+    let z = f32::abs(diff.z);
 
-//                 verts.push(Vector3::new(x, y, z));
-//             } else if let Option::Some(caps) = tri_reg.captures(line) {
-//                 let x = u32::from_str(&caps[1]).unwrap() - 1;
-//                 let y = u32::from_str(&caps[2]).unwrap() - 1;
-//                 let z = u32::from_str(&caps[3]).unwrap() - 1;
+    let max_extent = f32::max(x, f32::max(y, z));
 
-//                 tris.push((x, y, z));
-//             }
+    verts
+        .iter()
+        .map(|vert| ((1.0 / max_extent) * vert))
+        .collect()
+}
 
-//             (verts, tris)
-//         });
+fn center_verts(verts: &[Vector3<f32>]) -> Vec<Vector3<f32>> {
+    let (min, max) = get_extents(verts);
+    let center = 0.5 * (max - min);
 
-//     mesh.add_tris(tris.as_slice())
-//         .add_verticies(verts.as_slice());
+    verts.iter().map(|vert| vert - center).collect()
+}
 
-//     mesh.preprocess_compute_normals();
-//     Ok(mesh)
-// }
+fn get_tri_match(
+    uv_fn: &Option<UVMapFn>,
+    normal_fn: &Option<NormalComputeFn>,
+) -> Box<Fn(&str) -> Option<Triangle>> {
+    let normal_compute = normal_fn.is_some();
+    let uv_compute = uv_fn.is_some();
 
-pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
-    let content = read_in(file_path)?;
+    let reg = Regex::new(get_tri_regex(&uv_fn, &normal_fn)).unwrap();
+
+    match (uv_compute, normal_compute) {
+        (false, false) => Box::new(move |line| {
+            let caps = reg.captures(line)?;
+            let v1 = (
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+            );
+            let v2 = (
+                u32::from_str(&caps[4]).unwrap() - 1,
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[6]).unwrap() - 1,
+            );
+            let v3 = (
+                u32::from_str(&caps[7]).unwrap() - 1,
+                u32::from_str(&caps[8]).unwrap() - 1,
+                u32::from_str(&caps[9]).unwrap() - 1,
+            );
+
+            Some((v1, v2, v3))
+        }),
+        (true, false) => Box::new(move |line| {
+            let caps = reg.captures(line)?;
+            let v1 = (
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+            );
+            let v2 = (
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[4]).unwrap() - 1,
+            );
+            let v3 = (
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[6]).unwrap() - 1,
+            );
+
+            Some((v1, v2, v3))
+        }),
+        _ => Box::new(|_| None),
+    }
+}
+
+fn get_tri_regex(uv_fn: &Option<UVMapFn>, normal_fn: &Option<NormalComputeFn>) -> &'static str {
+    let tri_reg;
+
+    let normal_compute = normal_fn.is_some();
+    let uv_compute = uv_fn.is_some();
+
+    if normal_compute && uv_compute {
+        tri_reg = r"^(?:f) (\d+)(?:/\d*)* (\d+)(?:/\d*)* (\d+)(?:/\d*)*";
+    } else if normal_compute {
+        tri_reg = r"^(?:f) (\d+)/(\d+)(?:/\d*)* (\d+)/(\d+)(?:/\d*)* (\d+)/(\d+)(?:/\d*)*";
+    } else if uv_compute {
+        tri_reg = r"^(?:f) (\d+)/(?:\d+)?/(\d+) (\d+)/(?:\d+)?/(\d+) (\d+)/(?:\d+)?/(\d+)";
+    } else {
+        tri_reg = r"^(?:f) (\d+)/(\d+)/(\d+) (\d+)/(\d+)/(\d+) (\d+)/(\d+)/(\d+)";
+    }
+
+    tri_reg
+}
+
+fn get_tri_from_caps(
+    caps: &Captures,
+    uv_compute: &Option<UVMapFn>,
+    normal_compute: &Option<NormalComputeFn>,
+) -> Triangle {
+    let (v1, v2, v3);
+
+    match (uv_compute.is_some(), normal_compute.is_some()) {
+        (true, true) => {
+            v1 = (
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[1]).unwrap() - 1,
+            );
+            v2 = (
+                u32::from_str(&caps[2]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+            );
+            v3 = (
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+            );
+        }
+        (true, false) => {
+            v1 = (
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+            );
+            v2 = (
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[4]).unwrap() - 1,
+            );
+            v3 = (
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[6]).unwrap() - 1,
+            );
+        }
+        (false, true) => {
+            v1 = (
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+                u32::from_str(&caps[1]).unwrap() - 1,
+            );
+            v2 = (
+                u32::from_str(&caps[3]).unwrap() - 1,
+                u32::from_str(&caps[4]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+            );
+            v3 = (
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[6]).unwrap() - 1,
+                u32::from_str(&caps[5]).unwrap() - 1,
+            );
+        }
+        (false, false) => {
+            v1 = (
+                u32::from_str(&caps[1]).unwrap() - 1,
+                u32::from_str(&caps[2]).unwrap() - 1,
+                u32::from_str(&caps[3]).unwrap() - 1,
+            );
+            v2 = (
+                u32::from_str(&caps[4]).unwrap() - 1,
+                u32::from_str(&caps[5]).unwrap() - 1,
+                u32::from_str(&caps[6]).unwrap() - 1,
+            );
+            v3 = (
+                u32::from_str(&caps[7]).unwrap() - 1,
+                u32::from_str(&caps[8]).unwrap() - 1,
+                u32::from_str(&caps[9]).unwrap() - 1,
+            );
+        }
+    }
+
+    (v1, v2, v3)
+}
+
+pub fn load_file_with(
+    file_path: &str,
+    uv_fn: &Option<UVMapFn>,
+    normal_fn: &Option<NormalComputeFn>,
+) -> Result<Mesh, io::Error> {
+    let content = utility::read_in_file(file_path)?;
 
     // Raw vectors for constructing final info
     // Verts, normals, UVs, faces
@@ -81,9 +244,8 @@ pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
 
     let mut mesh = Mesh::new();
 
-    let tri_reg =
-        Regex::new(r"^(?:f) (\d+)/(\d+)/(\d+) (\d+)/(\d+)/(\d+) (\d+)/(\d+)/(\d+)").unwrap();
-    // let tri_reg_inner = Regex::new(r"(\d+)\/(\d+)\/(\d+)").unwrap();
+    let tri_reg = get_tri_match(&uv_fn, &normal_fn);
+
     let vert_reg = Regex::new(
         r"^(?:v) (-?[\d]+(?:\.[\d]+)?) (-?[\d]+(?:\.[\d]+)?) (-?[\d]+(?:\.[\d]+)?)",
     ).unwrap();
@@ -93,7 +255,7 @@ pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
     let uv_reg = Regex::new(r"^(?:vt) (-?[\d]+(?:\.[\d]+)?) (-?[\d]+(?:\.[\d]+)?)").unwrap();
 
     // Parse verts into raw components
-    let (verts_raw, normals_raw, uvs_raw, tris_raw) = content.lines().fold(
+    let (mut verts_raw, normals_raw, mut uvs_raw, tris_raw) = content.lines().fold(
         initial,
         |(mut verts, mut norms, mut uvs, mut tris), line| {
             // Verts
@@ -105,41 +267,36 @@ pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
                 verts.push(Vector3::new(x, y, z));
             // Normals
             } else if let Some(caps) = normal_reg.captures(line) {
-                let x = f32::from_str(&caps[1]).unwrap();
-                let y = f32::from_str(&caps[2]).unwrap();
-                let z = f32::from_str(&caps[3]).unwrap();
+                if normal_fn.is_none() {
+                    let x = f32::from_str(&caps[1]).unwrap();
+                    let y = f32::from_str(&caps[2]).unwrap();
+                    let z = f32::from_str(&caps[3]).unwrap();
 
-                norms.push(Vector3::new(x, y, z));
+                    norms.push(Vector3::new(x, y, z));
+                }
             // UVs
             } else if let Some(caps) = uv_reg.captures(line) {
-                let x = f32::from_str(&caps[1]).unwrap();
-                let y = f32::from_str(&caps[2]).unwrap();
+                if uv_fn.is_none() {
+                    let x = f32::from_str(&caps[1]).unwrap();
+                    let y = f32::from_str(&caps[2]).unwrap();
 
-                uvs.push(Vector2::new(x, y));
+                    uvs.push(Vector2::new(x, y));
+                }
             // tris
-            } else if let Some(caps) = tri_reg.captures(line) {
-                let v1 = (
-                    u32::from_str(&caps[1]).unwrap() - 1,
-                    u32::from_str(&caps[2]).unwrap() - 1,
-                    u32::from_str(&caps[3]).unwrap() - 1,
-                );
-                let v2 = (
-                    u32::from_str(&caps[4]).unwrap() - 1,
-                    u32::from_str(&caps[5]).unwrap() - 1,
-                    u32::from_str(&caps[6]).unwrap() - 1,
-                );
-                let v3 = (
-                    u32::from_str(&caps[7]).unwrap() - 1,
-                    u32::from_str(&caps[8]).unwrap() - 1,
-                    u32::from_str(&caps[9]).unwrap() - 1,
-                );
-
-                tris.push((v1, v2, v3));
+            } else if let Some(tri) = tri_reg(line) {
+                tris.push(tri);
             }
 
             (verts, norms, uvs, tris)
         },
     );
+    //verts_raw = center_verts(&verts_raw);
+    verts_raw = normalize_scale(&verts_raw);
+    //verts_raw = center_verts(&verts_raw);
+
+    if let &Some(ref func) = uv_fn {
+        uvs_raw = verts_raw.iter().map(func).collect();
+    }
 
     // Enumerate unique verticies and index faces
     for (first, second, third) in tris_raw {
@@ -164,4 +321,8 @@ pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
     }
 
     Ok(mesh)
+}
+
+pub fn load_file(file_path: &str) -> Result<Mesh, io::Error> {
+    load_file_with(file_path, &None, &None)
 }

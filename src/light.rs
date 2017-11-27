@@ -85,15 +85,13 @@ impl Into<LightData> for Light {
                 spotlight_inner: 0.0,
                 spotlight_falloff: 0.0,
             },
-            LightType::Spot(
-                ref pos,
-                ref dir,
-                SpotLightInfo {
-                    ref inner_radius,
-                    ref outer_radius,
-                    ref falloff,
-                },
-            ) => LightData {
+            LightType::Spot(ref pos,
+                            ref dir,
+                            SpotLightInfo {
+                                ref inner_radius,
+                                ref outer_radius,
+                                ref falloff,
+                            }) => LightData {
                 position: pos.to_homogeneous().into(),
                 direction: dir.to_homogeneous().into(),
                 diffuse_color: self.diffuse_color.into(),
@@ -126,11 +124,7 @@ pub fn upload_lights<R: Resources, C: CommandBuffer<R>>(
     encoder
         .update_buffer(
             &mesh_data.data_ref_mut().light_meta,
-            &[
-                LightMeta {
-                    count: count as i32,
-                },
-            ],
+            &[LightMeta { count: count as i32 }],
             0,
         )
         .unwrap();

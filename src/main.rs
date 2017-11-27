@@ -25,7 +25,8 @@ use rg::mesh_loader;
 use rg::light;
 use rg::object;
 use rg::object::Object;
-use rgraphics::texture;
+use rg::texture;
+use rg::utility;
 
 fn main() {
     let mut width = 800;
@@ -46,8 +47,12 @@ fn main() {
 
     let program = factory
         .create_pipeline_simple(
-            include_bytes!("assets/shaders/shader.vert"),
-            include_bytes!("assets/shaders/shader.frag"),
+            utility::read_in_file("assets/shaders/shader.vert")
+                .unwrap()
+                .as_bytes(),
+            utility::read_in_file("assets/shaders/shader.frag")
+                .unwrap()
+                .as_bytes(),
             pipe::new(),
         )
         .unwrap();
@@ -97,8 +102,8 @@ fn main() {
         LIGHT_COUNT
     ];
 
-    let diff_tex = texture::load_texture(&mut factory, "src/assets/textures/diffuse.tga").unwrap();
-    let spec_tex = texture::load_texture(&mut factory, "src/assets/textures/specular.tga").unwrap();
+    let diff_tex = texture::load_texture(&mut factory, "assets/textures/diffuse.tga").unwrap();
+    let spec_tex = texture::load_texture(&mut factory, "assets/textures/specular.tga").unwrap();
 
     let mat = Material::Textured {
         diffuse_texture: diff_tex,
@@ -112,17 +117,17 @@ fn main() {
     //     specular_color: Color::red(),
     //     specular_power: 5.0,
     // };
-    
+
     let mut model_trans = Object::new(
         mat,
         Point3::new(0.0, 0.0, -1.0),
-        Vector3::from_element(0.25),
+        Vector3::from_element(1.0),
         Vector3::zeros(),
     );
 
-    let bunny_mesh = mesh_loader::load_file("src/assets/models/suzanne.obj").unwrap();
-    let horse_mesh = mesh_loader::load_file("src/assets/models/cube.obj").unwrap();
-    //let cube_mesh = mesh_loader::load_file("src/assets/models/cube.obj").unwrap();
+    let bunny_mesh = mesh_loader::load_file("assets/models/suzanne.obj").unwrap();
+    let horse_mesh = mesh_loader::load_file("assets/models/cube.obj").unwrap();
+    //let cube_mesh = mesh_loader::load_file("assets/models/cube.obj").unwrap();
 
     let mut bunny_data = bunny_mesh
         .build(&mut factory, color_view.clone(), depth_view.clone())
@@ -138,7 +143,6 @@ fn main() {
     light::upload_lights(&mut encoder, &mut bunny_data, lights.as_slice());
     light::upload_lights(&mut encoder, &mut horse_data, lights.as_slice());
 
-    println!("Running");
     while running {
         // Update times and get dt
         let curr_time = time::now();
